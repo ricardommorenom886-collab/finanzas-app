@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="128" fill="url(#grad)" />
+  
+  <!-- Subtle decorative ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.15" />
+  
+  <!-- Credit Card/Wallet shape in background -->
+  <rect x="96" y="140" width="320" height="200" rx="32" fill="url(#cardGrad)" stroke="#ffffff" stroke-width="3" stroke-opacity="0.3" filter="url(#shadow)" />
+  
+  <!-- Card stripe -->
+  <rect x="96" y="190" width="320" height="40" fill="#064e3b" fill-opacity="0.4" />
+  
+  <!-- Main Dollar/Currency Shield Badge -->
+  <circle cx="256" cy="330" r="100" fill="#ffffff" filter="url(#shadow)" />
+  
+  <!-- Dollar Symbol in Emerald -->
+  <text x="256" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="140" font-weight="900" fill="#059669" text-anchor="middle">$</text>
+  
+  <!-- Growth Arrow Top Right -->
+  <g transform="translate(320, 100) scale(1.2)">
+    <circle cx="30" cy="30" r="36" fill="#34d399" filter="url(#shadow)" />
+    <path d="M18 42 L42 18 M42 18 L26 18 M42 18 L42 34" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+</svg>

@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FinanzasPro - Control de Finanzas Personales</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#059669">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tailwind CSS (Local / Vercel con fallback) -->
+  <script src="./vendor/tailwindcss.js"></script>
+  <script>
+    if (typeof tailwind === 'undefined') {
+      document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+    }
+  </script>
+  <script>
+    if (typeof tailwind !== 'undefined') {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#ecfdf5',
+                100: '#d1fae5',
+                200: '#a7f3d0',
+                300: '#6ee7b7',
+                400: '#34d399',
+                500: '#10b981',
+                600: '#059669',
+                700: '#047857',
+                800: '#065f46',
+                900: '#064e3b',
+              }
+            }
+          }
+        }
+      };
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="./vendor/lucide.min.js"></script>
+  <script>if (typeof lucide === 'undefined') document.write('<script src="https://unpkg.com/lucide@latest"><\/script>');</script>
+  <!-- Chart.js -->
+  <script src="./vendor/chart.umd.min.js"></script>
+  <script>if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');</script>
+  <!-- Canvas Confetti -->
+  <script src="./vendor/confetti.browser.min.js"></script>
+  <script>if (typeof confetti === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"><\/script>');</script>
+  <!-- QRCode.js -->
+  <script src="./vendor/qrcode.min.js"></script>
+  <script>if (typeof QRCode === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');</script>
+
+  <style>
+    /* Smooth transitions and mobile touch optimizations */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font-size: 16px;
+      /* Prevents auto-zoom on iOS/Android */
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body
+  class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+
+  <!-- Top Navigation Header -->
+  <header
+    class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+      <!-- Brand & Logo -->
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white">FinanzasPro</h1>
+            <span
+              class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Multiplataforma
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Control de gastos, metas y presupuesto
+          </p>
+        </div>
+      </div>
+
+      <!-- Center Month Selector -->
+      <div
+        class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700/80">
+        <button id="btnPrevMonth" title="Mes anterior"
+          class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-emerald-600 transition">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <div
+          class="px-2.5 text-center cursor-pointer font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5"
+          id="monthSelectorTrigger">
+          <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-500"></i>
+          <span id="currentMonthLabel">Cargando...</span>
+        </div>
+        <button id="btnNextMonth" title="Mes siguiente"
+          class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-emerald-600 transition">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Connect to Phone Button -->
+        <button id="btnConnectMobile" title="Conectar con Android"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>
+          <span>Móvil</span>
+        </button>
+
+        <!-- Install PWA Button (Hidden by default, shown when eligible) -->
+        <button id="btnInstallApp"
+          class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Instalar App</span>
+        </button>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button id="btnToggleTheme" title="Cambiar tema claro/oscuro"
+          class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+        </button>
+
+        <!-- New Transaction Desktop Button -->
+        <button id="btnOpenNewTxModal"
+          class="hidden sm:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl font-medium text-xs sm:text-sm shadow-sm transition active:scale-95">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Registrar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Month Picker Hidden Dropdown Modal -->
+  <div id="monthPickerModal"
+    class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 border border-slate-200 dark:border-slate-800 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Seleccionar Período</h3>
+        <button id="btnCloseMonthPicker" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Año</label>
+          <div class="flex items-center gap-2">
+            <button id="btnPrevYear" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700"><i
+                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <span id="pickerYearLabel"
+              class="flex-1 text-center font-bold text-lg text-slate-800 dark:text-white">2026</span>
+            <button id="btnNextYear" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700"><i
+                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Mes</label>
+          <div class="grid grid-cols-3 gap-2" id="pickerMonthGrid">
+            <!-- Dynamically populated months -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container with Responsive Layout -->
+  <div class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row pb-20 md:pb-6">
+
+    <!-- Desktop Sidebar Navigation -->
+    <aside class="hidden md:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 p-4 shrink-0 gap-1.5">
+      <nav class="space-y-1">
+        <button data-tab="tab-dashboard"
+          class="nav-tab-btn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Balance & Resumen</span>
+        </button>
+        <button data-tab="tab-transactions"
+          class="nav-tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <div class="flex items-center gap-3">
+            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+            <span>Transacciones</span>
+          </div>
+          <span id="badgeTxCount"
+            class="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">0</span>
+        </button>
+        <button data-tab="tab-fixed-expenses"
+          class="nav-tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <div class="flex items-center gap-3">
+            <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+            <span>Gastos Fijos</span>
+          </div>
+          <span id="badgeFixedCount"
+            class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">0</span>
+        </button>
+        <button data-tab="tab-goals"
+          class="nav-tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <div class="flex items-center gap-3">
+            <i data-lucide="target" class="w-4 h-4"></i>
+            <span>Metas de Ahorro</span>
+          </div>
+          <span id="badgeGoalsCount"
+            class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">0</span>
+        </button>
+        <button data-tab="tab-budgets"
+          class="nav-tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <div class="flex items-center gap-3">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+            <span>Límites de Gastos</span>
+          </div>
+          <span id="badgeBudgetAlert"
+            class="hidden text-xs px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">!</span>
+        </button>
+        <button data-tab="tab-settings"
+          class="nav-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>Ajustes & Respaldo</span>
+        </button>
+      </nav>
+
+      <!-- Quick Platform Info Card -->
+      <div
+        class="mt-auto p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+        <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-semibold mb-1">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>
+          <span>100% Sin Servidor Externo</span>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          Tus finanzas quedan seguras en tu equipo. Compatible con Microsoft Windows y Android.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 sm:p-6 overflow-y-auto">
+
+      <!-- ================= TAB 1: BALANCE & RESUMEN ================= -->
+      <section id="tab-dashboard" class="tab-pane active space-y-6">
+
+        <!-- Budget Alert Warning Banner (Dynamic) -->
+        <div id="dashboardAlertBanner" class="hidden p-4 rounded-2xl border transition">
+          <!-- Rendered in app.js -->
+        </div>
+
+        <!-- Metric KPI Cards Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <!-- Ingresos -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span class="text-xs font-medium uppercase tracking-wider">Ingresos del Mes</span>
+              <div
+                class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div id="statIncome" class="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 truncate">
+              $0.00</div>
+            <div class="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <span id="statIncomeCount">0 registros</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+          </div>
+
+          <!-- Gastos -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span class="text-xs font-medium uppercase tracking-wider">Gastos del Mes</span>
+              <div
+                class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                <i data-lucide="trending-down" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div id="statExpense" class="text-lg sm:text-2xl font-bold text-rose-600 dark:text-rose-400 truncate">$0.00
+            </div>
+            <div class="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <span id="statExpenseCount">0 registros</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
+          </div>
+
+          <!-- Balance Neto -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span class="text-xs font-medium uppercase tracking-wider">Balance Neto</span>
+              <div
+                class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <i data-lucide="scale" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div id="statBalance" class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white truncate">$0.00
+            </div>
+            <div class="mt-1 flex items-center gap-1 text-[11px]" id="statSavingsRate">
+              <span>Tasa de ahorro: 0%</span>
+            </div>
+            <div id="statBalanceBar" class="absolute bottom-0 left-0 right-0 h-1 bg-blue-500"></div>
+          </div>
+
+          <!-- Límite de Gasto Mensual -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+              <span class="text-xs font-medium uppercase tracking-wider">Límite Mensual</span>
+              <button id="btnQuickEditGlobalLimit" title="Modificar límite de gastos"
+                class="text-slate-400 hover:text-emerald-500 transition">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            <div id="statBudgetRemaining" class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white truncate">
+              $0.00</div>
+            <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span id="statBudgetConsumed">0% consumido</span>
+              <span id="statBudgetLimitTotal" class="font-medium">de $0</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-1 absolute bottom-0 left-0 right-0">
+              <div id="statBudgetProgressBar" class="h-full bg-emerald-500 transition-all duration-300"
+                style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Category Breakdown Chart -->
+          <div
+            class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-500"></i>
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Gastos por Categoría</h3>
+              </div>
+              <span id="chartTotalExpenseLabel" class="text-xs font-semibold text-slate-500">$0.00</span>
+            </div>
+            <div class="relative h-60 flex items-center justify-center">
+              <canvas id="categoryChart"></canvas>
+              <div id="noChartDataNotice"
+                class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                <i data-lucide="receipt" class="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2"></i>
+                <p class="text-xs text-slate-500 dark:text-slate-400">No hay gastos registrados en este mes</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cashflow Trend / Income vs Expense Chart -->
+          <div
+            class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-500"></i>
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Comparativa del Período</h3>
+              </div>
+              <span class="text-xs text-slate-400">Ingresos vs Gastos</span>
+            </div>
+            <div class="relative h-60">
+              <canvas id="cashflowChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Grid: Recent Transactions & Active Savings Goals -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Recent Transactions (2 cols on large screen) -->
+          <div
+            class="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4 text-emerald-500"></i>
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Movimientos Recientes del Mes
+                </h3>
+              </div>
+              <button id="btnViewAllTx"
+                class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Ver todos
+              </button>
+            </div>
+            <div id="recentTxList" class="space-y-2.5">
+              <!-- Rendered in app.js -->
+            </div>
+          </div>
+
+          <!-- Col 3: Gastos Fijos & Active Goals Preview (1 col) -->
+          <div class="space-y-6">
+            <!-- Gastos Fijos Quick Widget -->
+            <div
+              class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-500"></i>
+                  <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Gastos Fijos del Mes</h3>
+                </div>
+                <button id="btnViewAllFixed"
+                  class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                  Ver fijos
+                </button>
+              </div>
+              <div id="dashboardFixedWidget" class="space-y-2.5">
+                <!-- Rendered in app.js -->
+              </div>
+            </div>
+
+            <!-- Active Goals Preview -->
+            <div
+              class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="target" class="w-4 h-4 text-emerald-500"></i>
+                  <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Metas Activas</h3>
+                </div>
+                <button id="btnViewAllGoals"
+                  class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                  Ver todas
+                </button>
+              </div>
+              <div id="dashboardGoalsList" class="space-y-3.5 flex-1">
+                <!-- Rendered in app.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: TRANSACCIONES ================= -->
+      <section id="tab-transactions" class="tab-pane hidden space-y-6">
+
+        <!-- Controls & Filters Toolbar -->
+        <div
+          class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="txSearchInput" placeholder="Buscar concepto, nota, categoría..."
+                class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition">
+            </div>
+
+            <!-- Action: Add Transaction -->
+            <button id="btnOpenNewTxFromTab"
+              class="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition active:scale-95">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Nueva Transacción</span>
+            </button>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <!-- Type Filters -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
+              <button data-filter-type="all"
+                class="tx-type-filter active px-3 py-1 rounded-lg transition">Todos</button>
+              <button data-filter-type="expense" class="tx-type-filter px-3 py-1 rounded-lg transition">Gastos</button>
+              <button data-filter-type="income" class="tx-type-filter px-3 py-1 rounded-lg transition">Ingresos</button>
+            </div>
+
+            <!-- Category Filter Dropdown -->
+            <select id="txCategoryFilter"
+              class="bg-slate-100 dark:bg-slate-800 border-none text-xs font-medium text-slate-700 dark:text-slate-300 py-1.5 px-3 rounded-xl focus:ring-0">
+              <option value="all">Todas las categorías</option>
+              <!-- Populated dynamically -->
+            </select>
+
+            <span id="txFilteredCount" class="text-xs text-slate-400 ml-auto">0 transacciones</span>
+          </div>
+        </div>
+
+        <!-- Transactions List / Table -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Registro de Movimientos</h3>
+            <span class="text-xs text-slate-500">Puedes editar cualquier monto haciendo clic en el lápiz ✏️</span>
+          </div>
+
+          <div id="fullTxList" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <!-- Rendered in app.js -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB: GASTOS FIJOS ================= -->
+      <section id="tab-fixed-expenses" class="tab-pane hidden space-y-6">
+
+        <!-- Header Banner -->
+        <div
+          class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 rounded-3xl p-5 sm:p-7 text-white shadow-md relative overflow-hidden">
+          <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur mb-2">
+                <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
+                Obligaciones Mensuales
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Gastos Fijos</h2>
+              <p class="text-white/80 text-xs sm:text-sm mt-1 max-w-md">
+                Estipula tus pagos mensuales recurrentes (arriendo, servicios, internet, cuotas) y márcalos como pagados
+                para reflejarlos de inmediato en tu balance.
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button id="btnOpenNewFixedExpenseModal"
+                class="flex items-center gap-2 bg-white text-orange-950 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-bold text-sm shadow-sm transition active:scale-95">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Gasto Fijo</span>
+              </button>
+            </div>
+          </div>
+          <!-- Background decoration -->
+          <div class="absolute -right-8 -bottom-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none">
+          </div>
+        </div>
+
+        <!-- KPI Summary Cards for Fixed Expenses -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <!-- Total Fijo Mensual -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold uppercase">Total Fijo Mensual</span>
+              <i data-lucide="receipt" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="statFixedTotal" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">$0</div>
+            <span class="text-[11px] text-slate-400" id="statFixedCountLabel">0 obligaciones</span>
+          </div>
+
+          <!-- Ya Pagado este mes -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold uppercase">Pagado este Mes</span>
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+            </div>
+            <div id="statFixedPaid" class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">$0
+            </div>
+            <span class="text-[11px] text-emerald-500 font-medium" id="statFixedPaidPct">0% liquidado</span>
+          </div>
+
+          <!-- Pendiente por Pagar -->
+          <div
+            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold uppercase">Pendiente por Pagar</span>
+              <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+            </div>
+            <div id="statFixedPending" class="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">$0</div>
+            <span class="text-[11px] text-amber-500 font-medium" id="statFixedPendingCount">0 pendientes</span>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
+            <button data-filter-fixed="all"
+              class="fixed-filter-btn active px-3 py-1.5 rounded-lg transition">Todos</button>
+            <button data-filter-fixed="pending" class="fixed-filter-btn px-3 py-1.5 rounded-lg transition">Pendientes
+              este mes</button>
+            <button data-filter-fixed="paid" class="fixed-filter-btn px-3 py-1.5 rounded-lg transition">Ya
+              Pagados</button>
+          </div>
+          <span class="text-xs text-slate-400">Estado para: <strong id="fixedMonthLabel"
+              class="text-slate-700 dark:text-slate-200">Mes actual</strong></span>
+        </div>
+
+        <!-- Grid of Fixed Expenses -->
+        <div id="fixedExpensesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered in app.js -->
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: METAS DE AHORRO ================= -->
+      <section id="tab-goals" class="tab-pane hidden space-y-6">
+
+        <!-- Header Banner with summary -->
+        <div
+          class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-5 sm:p-7 text-white shadow-md relative overflow-hidden">
+          <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur mb-2">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                Tu Futuro Financiero
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Metas de Ahorro</h2>
+              <p class="text-white/80 text-xs sm:text-sm mt-1 max-w-md">
+                Establece objetivos concretos (vacaciones, emergencias, compras) y haz crecer tu dinero paso a paso.
+              </p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-right hidden sm:block">
+                <div class="text-xs text-white/70">Ahorro total acumulado</div>
+                <div id="goalsTotalAccumulated" class="text-2xl font-black">$0.00</div>
+              </div>
+              <button id="btnOpenNewGoalModal"
+                class="flex items-center gap-2 bg-white text-emerald-800 hover:bg-slate-100 px-4 py-2.5 rounded-2xl font-bold text-sm shadow-sm transition active:scale-95">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Crear Meta</span>
+              </button>
+            </div>
+          </div>
+          <!-- Background decoration -->
+          <div class="absolute -right-8 -bottom-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none">
+          </div>
+        </div>
+
+        <!-- Goals Grid -->
+        <div id="goalsListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <!-- Rendered dynamically in app.js -->
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: LÍMITES DE GASTOS & PRESUPUESTOS ================= -->
+      <section id="tab-budgets" class="tab-pane hidden space-y-6">
+
+        <!-- Global Monthly Limit Banner -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                </div>
+                <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Límite Global de Gastos del
+                  Mes</h3>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Tope máximo sugerido que no deseas sobrepasar durante todo el mes seleccionado.
+              </p>
+            </div>
+            <button id="btnEditGlobalLimit"
+              class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+              <span>Modificar Límite Global</span>
+            </button>
+          </div>
+
+          <!-- Progress Bar & Status -->
+          <div class="space-y-2 pt-2">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <div class="flex items-center gap-1.5 font-bold">
+                <span>Gastado:</span>
+                <span id="budgetSpentAmount" class="text-rose-600 dark:text-rose-400">$0.00</span>
+              </div>
+              <div class="flex items-center gap-1.5 font-bold">
+                <span>Límite establecido:</span>
+                <span id="budgetGlobalLimitAmount" class="text-slate-900 dark:text-white">$0.00</span>
+              </div>
+            </div>
+            <div
+              class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
+              <div id="budgetGlobalProgressBar" class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style="width: 0%"></div>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span id="budgetGlobalRemainingText" class="text-slate-500 dark:text-slate-400">Disponible: $0.00</span>
+              <span id="budgetGlobalPercentBadge" class="font-semibold text-emerald-600 dark:text-emerald-400">0%
+                consumido</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Budgets Section -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base text-slate-900 dark:text-white">Límites por Categoría</h3>
+              <p class="text-xs text-slate-500">Controla rubro por rubro (Alimentación, Ocio, Servicios, etc.)</p>
+            </div>
+            <button id="btnOpenNewCategoryBudgetModal"
+              class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Asignar Límite</span>
+            </button>
+          </div>
+
+          <!-- Category Budgets Grid -->
+          <div id="categoryBudgetsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Rendered dynamically in app.js -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 5: AJUSTES & RESPALDO ================= -->
+      <section id="tab-settings" class="tab-pane hidden space-y-6">
+
+        <!-- Platform Compatibility Guide -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <i data-lucide="laptop-minimal" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Compatibilidad Android y
+                Microsoft Windows</h3>
+              <p class="text-xs text-slate-500">Diseñado para funcionar sin interrupciones en ambos entornos</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Windows Card -->
+            <div
+              class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+              <div class="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+                <i data-lucide="monitor" class="w-4 h-4 text-blue-500"></i>
+                <span>En Microsoft Windows</span>
+              </div>
+              <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside">
+                <li>Instalable como aplicación de escritorio nativa desde <strong>Microsoft Edge</strong> o
+                  <strong>Chrome</strong> (clic en el icono de instalar en la barra de direcciones).
+                </li>
+                <li>Funciona completamente sin conexión a internet (PWA offline).</li>
+                <li>Ejecutable con un clic mediante el archivo <code
+                    class="bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">iniciar.bat</code>.</li>
+                <li>Exportación directa a formato CSV compatible con Microsoft Excel.</li>
+              </ul>
+            </div>
+
+            <!-- Android Card -->
+            <div
+              class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+              <div class="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+                <i data-lucide="smartphone" class="w-4 h-4 text-emerald-500"></i>
+                <span>En Teléfonos Android</span>
+              </div>
+              <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside">
+                <li>Abre el navegador en tu teléfono con la dirección Wi-Fi local de tu PC o escanea el código QR.</li>
+                <li>Toca en el menú (⋮) y selecciona <strong>"Agregar a la pantalla principal"</strong> o
+                  <strong>"Instalar aplicación"</strong>.
+                </li>
+                <li>Se comportará como una app nativa con icono propio, barra inferior para pulgares y soporte táctil.
+                </li>
+              </ul>
+              <button id="btnOpenQRModalSettings"
+                class="w-full mt-2 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-semibold transition">
+                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                <span>Ver Código QR para Android</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backup & Restore Data Card -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <i data-lucide="database" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Respaldo y Transferencia de
+                Datos</h3>
+              <p class="text-xs text-slate-500">Exporta o transfiere tus datos entre tu PC Windows y tu Android con
+                total privacidad</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <!-- Export JSON -->
+            <button id="btnExportJSON"
+              class="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition text-center group">
+              <i data-lucide="file-json"
+                class="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-2 group-hover:scale-110 transition"></i>
+              <span class="font-bold text-xs text-slate-800 dark:text-white">Exportar Respaldo (JSON)</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Para guardar o pasar a otro equipo</span>
+            </button>
+
+            <!-- Export CSV Excel -->
+            <button id="btnExportCSV"
+              class="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition text-center group">
+              <i data-lucide="file-spreadsheet"
+                class="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2 group-hover:scale-110 transition"></i>
+              <span class="font-bold text-xs text-slate-800 dark:text-white">Exportar a Excel (CSV)</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Ideal para tablas en Microsoft Excel</span>
+            </button>
+
+            <!-- Import JSON -->
+            <label
+              class="flex flex-col items-center justify-center p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition text-center cursor-pointer group">
+              <input type="file" id="importFileInput" accept=".json" class="hidden">
+              <i data-lucide="upload-cloud"
+                class="w-6 h-6 text-slate-600 dark:text-slate-300 mb-2 group-hover:scale-110 transition"></i>
+              <span class="font-bold text-xs text-slate-800 dark:text-white">Restaurar Respaldo</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Cargar archivo JSON previo</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Preferences Card (Currency, Reset) -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Preferencias</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Símbolo de Moneda</label>
+              <select id="currencySelector"
+                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="$">$ - Pesos ($)</option>
+                <option value="COP $">COP $ - Pesos Colombianos</option>
+                <option value="MXN $">MXN $ - Pesos Mexicanos</option>
+                <option value="ARS $">ARS $ - Pesos Argentinos</option>
+                <option value="CLP $">CLP $ - Pesos Chilenos</option>
+                <option value="UYU $">UYU $ - Pesos Uruguayos</option>
+                <option value="USD $">USD $ - Dólares</option>
+                <option value="€">€ - Euros</option>
+              </select>
+            </div>
+
+            <div class="flex items-end">
+              <button id="btnResetDemoData"
+                class="w-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 py-2 px-4 rounded-xl text-xs font-semibold transition">
+                Restaurar Datos de Demostración
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation (Floating App Bar for Android / Mobile) -->
+  <nav
+    class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex items-center justify-around shadow-lg">
+    <button data-tab="tab-dashboard"
+      class="mobile-nav-btn active flex flex-col items-center gap-0.5 text-slate-400 hover:text-emerald-600 transition">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span class="text-[9px] font-medium">Balance</span>
+    </button>
+    <button data-tab="tab-transactions"
+      class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-emerald-600 transition">
+      <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+      <span class="text-[9px] font-medium">Movs</span>
+    </button>
+    <button id="btnMobileFAB" title="Registrar movimiento"
+      class="w-11 h-11 -mt-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 active:scale-95 transition shrink-0">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+    </button>
+    <button data-tab="tab-fixed-expenses"
+      class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-emerald-600 transition">
+      <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+      <span class="text-[9px] font-medium">Fijos</span>
+    </button>
+    <button data-tab="tab-goals"
+      class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-emerald-600 transition">
+      <i data-lucide="target" class="w-5 h-5"></i>
+      <span class="text-[9px] font-medium">Metas</span>
+    </button>
+    <button data-tab="tab-budgets"
+      class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 hover:text-emerald-600 transition">
+      <i data-lucide="shield-alert" class="w-5 h-5"></i>
+      <span class="text-[9px] font-medium">Límites</span>
+    </button>
+  </nav>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- MODAL: Nueva / Modificar Transacción -->
+  <div id="txModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="txModalTitle" class="font-bold text-lg text-slate-900 dark:text-white">Nueva Transacción</h3>
+        <button id="btnCloseTxModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="txForm" class="space-y-4">
+        <input type="hidden" id="txId">
+
+        <!-- Type Selector (Income / Expense) -->
+        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+          <button type="button" id="txTypeExpense"
+            class="py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 bg-rose-600 text-white shadow-sm transition">
+            <i data-lucide="trending-down" class="w-4 h-4"></i>
+            <span>Gasto</span>
+          </button>
+          <button type="button" id="txTypeIncome"
+            class="py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            <span>Ingreso</span>
+          </button>
+        </div>
+
+        <!-- Amount Input -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Monto (<span
+              class="currencySymbol">$</span>)</label>
+          <div class="relative">
+            <span
+              class="currencySymbol absolute left-4 top-1/2 -translate-y-1/2 font-bold text-xl text-slate-400">$</span>
+            <input type="number" step="0.01" min="0.01" id="txAmount" required placeholder="0.00"
+              class="w-full pl-9 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xl font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <!-- Category Input -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Categoría</label>
+          <select id="txCategory" required
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <!-- Populated dynamically based on Expense or Income -->
+          </select>
+        </div>
+
+        <!-- Concept / Description Input -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Concepto / Descripción</label>
+          <input type="text" id="txConcept" required placeholder="Ej. Compra de supermercado, Salario quincenal..."
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- Date & Payment Method Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fecha</label>
+            <input type="date" id="txDate" required
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Método de Pago</label>
+            <select id="txPaymentMethod"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="Tarjeta">Tarjeta (Débito/Crédito)</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia Bancaria</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Optional Notes -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nota adicional (opcional)</label>
+          <input type="text" id="txNotes" placeholder="Detalle adicional..."
+            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelTx"
+            class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
+            Guardar Transacción
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Crear / Modificar Meta de Ahorro -->
+  <div id="goalModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="goalModalTitle" class="font-bold text-lg text-slate-900 dark:text-white">Nueva Meta de Ahorro</h3>
+        <button id="btnCloseGoalModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="goalForm" class="space-y-4">
+        <input type="hidden" id="goalId">
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre del Objetivo</label>
+          <input type="text" id="goalTitle" required placeholder="Ej. Fondo de Emergencia, Vacaciones Cancún..."
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Monto Objetivo (<span
+                class="currencySymbol">$</span>)</label>
+            <input type="number" step="0.01" min="1" id="goalTargetAmount" required placeholder="1000.00"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Ahorro Inicial (<span
+                class="currencySymbol">$</span>)</label>
+            <input type="number" step="0.01" min="0" id="goalCurrentAmount" placeholder="0.00"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fecha Límite</label>
+            <input type="date" id="goalDeadline"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Color / Tema</label>
+            <select id="goalColor"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="emerald">Verde Esmeralda</option>
+              <option value="blue">Azul Océano</option>
+              <option value="purple">Morado Real</option>
+              <option value="amber">Dorado Ámbar</option>
+              <option value="rose">Rosa / Coral</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelGoal"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
+            Guardar Meta
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Abonar / Retirar Fondos de Meta de Ahorro -->
+  <div id="goalFundModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="goalFundModalTitle" class="font-bold text-base text-slate-900 dark:text-white">Abonar a la Meta</h3>
+        <button id="btnCloseGoalFundModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p id="goalFundSubtitle" class="text-xs text-slate-500 dark:text-slate-400 mb-4">Meta: Fondo de Ahorro</p>
+
+      <form id="goalFundForm" class="space-y-4">
+        <input type="hidden" id="fundGoalId">
+        <input type="hidden" id="fundActionType" value="deposit">
+
+        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3">
+          <button type="button" id="btnFundActionDeposit"
+            class="py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white shadow-sm transition">
+            + Abonar
+          </button>
+          <button type="button" id="btnFundActionWithdraw"
+            class="py-2 rounded-lg font-bold text-xs text-slate-600 dark:text-slate-300 hover:text-rose-600 transition">
+            - Retirar
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Monto a mover (<span
+              class="currencySymbol">$</span>)</label>
+          <input type="number" step="0.01" min="0.01" id="fundAmount" required placeholder="0.00"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="btnCancelFund"
+            class="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit" id="btnConfirmFund"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+            Confirmar Movimiento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Modificar Límite Global de Gastos -->
+  <div id="globalLimitModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Límite Global de Gastos</h3>
+        <button id="btnCloseGlobalLimitModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="globalLimitForm" class="space-y-4">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          Define el presupuesto máximo total que quieres gastar en un mes. La aplicación te alertará si te acercas o lo
+          sobrepasas.
+        </p>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Monto Límite Mensual (<span
+              class="currencySymbol">$</span>)</label>
+          <input type="number" step="0.01" min="0" id="inputGlobalLimitAmount" required placeholder="1500.00"
+            class="w-full px-3.5 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xl font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelGlobalLimit"
+            class="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+            Actualizar Límite
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Crear / Modificar Límite de Categoría -->
+  <div id="categoryBudgetModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="categoryBudgetModalTitle" class="font-bold text-base text-slate-900 dark:text-white">Límite por
+          Categoría</h3>
+        <button id="btnCloseCategoryBudgetModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="categoryBudgetForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Categoría</label>
+          <select id="budgetCategorySelect" required
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Límite Mensual (<span
+              class="currencySymbol">$</span>)</label>
+          <input type="number" step="0.01" min="1" id="budgetCategoryAmount" required placeholder="300.00"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelCategoryBudget"
+            class="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+            Guardar Límite
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Estipular / Modificar Gasto Fijo -->
+  <div id="fixedExpenseModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="fixedExpenseModalTitle" class="font-bold text-lg text-slate-900 dark:text-white">Estipular Gasto Fijo
+        </h3>
+        <button id="btnCloseFixedExpenseModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="fixedExpenseForm" class="space-y-4">
+        <input type="hidden" id="fixedExpenseId">
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Concepto / Nombre del Gasto
+            Fijo</label>
+          <input type="text" id="fixedConcept" required placeholder="Ej. Arriendo de Casa, Internet Fibra, Netflix..."
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Monto en Pesos (<span
+                class="currencySymbol">$</span>)</label>
+            <input type="number" step="1" min="1" id="fixedAmount" required placeholder="850000"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Día de Pago (1 - 31)</label>
+            <input type="number" min="1" max="31" id="fixedDueDay" required placeholder="5"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Categoría</label>
+            <select id="fixedCategory" required
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Método Preferido</label>
+            <select id="fixedPaymentMethod"
+              class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="Transferencia">Transferencia Bancaria</option>
+              <option value="Débito Automático">Débito Automático</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Efectivo">Efectivo</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Notas / Recordatorio
+            (opcional)</label>
+          <input type="text" id="fixedNotes" placeholder="Ej. Número de referencia o convenio bancario..."
+            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelFixedExpense"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
+            Guardar Gasto Fijo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- MODAL: Registrar Pago / Abono de Gasto Fijo -->
+  <div id="fixedPaymentModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="paymentModalTitle">Registrar Pago</h3>
+          <p class="text-xs text-slate-500" id="paymentModalSubtitle">Gasto Fijo: Arriendo</p>
+        </div>
+        <!-- CAMBIO AQUÍ: id="btnCloseFixedPaymentModal" -->
+        <button id="btnCloseFixedPaymentModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Resumen de Obligación -->
+      <div
+        class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 mb-4 space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-500">Monto Total de la Obligación:</span>
+          <span class="font-bold text-slate-900 dark:text-white" id="modalFixedTotalAmount">$0</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-500">Ya Pagado este mes:</span>
+          <span class="font-bold text-emerald-600 dark:text-emerald-400" id="modalFixedPaidAmount">$0</span>
+        </div>
+        <div
+          class="flex items-center justify-between text-xs font-semibold pt-1 border-t border-slate-200 dark:border-slate-700">
+          <span class="text-slate-700 dark:text-slate-300">Saldo Restante por Liquidar:</span>
+          <span class="text-amber-600 dark:text-amber-400" id="modalFixedPendingAmount">$0</span>
+        </div>
+      </div>
+
+      <form id="fixedPaymentForm" class="space-y-4">
+        <input type="hidden" id="paymentFixedId">
+        <input type="hidden" id="paymentTypeChoice" value="full">
+
+        <!-- Selector de Tipo de Pago: Completo vs Parcial -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">¿Cómo deseas pagar?</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <button type="button" id="btnPayTypeFull"
+              class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-sm transition">
+              <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+              <span>Pago Completo</span>
+            </button>
+            <button type="button" id="btnPayTypePartial"
+              class="py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-amber-600 transition">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+              <span>Abono Parcial</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Monto del pago -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold uppercase text-slate-400">
+              Monto a Pagar (<span class="currencySymbol">$</span>)
+            </label>
+            <button type="button" id="btnPayQuickAllPending"
+              class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              Pagar saldo restante completo
+            </button>
+          </div>
+          <input type="number" step="1" min="1" id="paymentAmountInput" required placeholder="0"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- Fecha del pago -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Fecha en que realizaste el
+            pago</label>
+          <input type="date" id="paymentDateInput" required
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <!-- Método de pago -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Método de Pago</label>
+          <select id="paymentMethodSelect"
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="Transferencia">Transferencia Bancaria</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta de Débito / Crédito</option>
+            <option value="Débito Automático">Débito Automático</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <!-- Nota / Comprobante -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nota o Comprobante
+            (opcional)</label>
+          <input type="text" id="paymentNotesInput" placeholder="Ej. Abono #1 de la quincena, ref bancaria 8392..."
+            class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btnCancelFixedPayment"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95">
+            Registrar Pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Conectar / Ejecutar en tu Celular Android -->
+  <div id="mobileConnectModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3 text-left">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="smartphone" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Ejecutar en tu Celular</h3>
+        </div>
+        <button id="btnCloseMobileConnectModal"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Selector de Método -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mb-4 text-xs font-bold">
+        <button type="button" id="btnMethodWifi" class="py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition">
+          1. Conectar por Wi-Fi
+        </button>
+        <button type="button" id="btnMethodStandalone"
+          class="py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition">
+          2. Archivo Sin PC
+        </button>
+      </div>
+
+      <!-- VISTA 1: Por Wi-Fi con Código QR -->
+      <div id="viewMobileWifi" class="space-y-3 text-center">
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-left">
+          Conecta tu teléfono a la <strong>misma red Wi-Fi</strong> y escanea este código con la cámara de tu móvil:
+        </p>
+
+        <!-- QR Code Canvas Container -->
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 dark:border-slate-700 inline-block shadow-xs">
+          <div id="qrcodeContainer" class="flex items-center justify-center min-w-[170px] min-h-[170px]"></div>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <div class="text-[11px] text-slate-400">O escribe esto en Google Chrome en tu celular:</div>
+          <div
+            class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between">
+            <span id="mobileConnectUrl">http://...</span>
+            <button id="btnCopyMobileUrl" class="text-emerald-600 hover:text-emerald-700 p-1" title="Copiar URL">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA 2: Archivo Autónomo (Sin necesidad de que la PC esté encendida) -->
+      <div id="viewMobileStandalone" class="hidden space-y-3 text-left">
+        <div
+          class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>¡Úsala en tu celular sin necesidad de PC!</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+            Puedes descargar el archivo autónomo <strong>FinanzasPro_Movil.html</strong>, enviártelo a tu WhatsApp o
+            Telegram, y tocarlo para abrirlo en Chrome de tu teléfono. Funciona 100% offline y almacena tus finanzas
+            en tu celular.
+          </p>
+        </div>
+
+        <button id="btnDownloadStandaloneHtml"
+          class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl text-xs font-bold shadow-sm transition active:scale-95">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Descargar FinanzasPro_Movil.html</span>
+        </button>
+
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-[11px] text-slate-500 space-y-1">
+          <div class="font-bold text-slate-700 dark:text-slate-300">Pasos rápidos para tu móvil:</div>
+          <div>1. Descarga el archivo y envíatelo por WhatsApp o Drive.</div>
+          <div>2. Ábrelo en tu celular con Google Chrome.</div>
+          <div>3. En el menú (⋮) toca <strong>"Agregar a la pantalla principal"</strong>.</div>
+        </div>
+      </div>
+
+      <div
+        class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 text-left flex items-center gap-1.5">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
+        <span>Compatible con cualquier teléfono Android y iPhone.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Main Application Logic Script -->
+  <script src="./app.js?v=2.5"></script>
+</body>
+
+</html>

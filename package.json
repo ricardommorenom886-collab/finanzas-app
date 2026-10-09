@@ -1,0 +1,27 @@
+{
+  "name": "finanzas-app",
+  "private": true,
+  "version": "2.5.0",
+  "description": "Aplicación PWA de finanzas personales para Microsoft Windows y Android",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node build-mobile.js",
+    "deploy": "vercel --prod",
+    "python": "python server.py"
+  },
+  "keywords": [
+    "finanzas",
+    "pwa",
+    "gastos-fijos",
+    "abonos",
+    "windows",
+    "android",
+    "presupuesto",
+    "ahorro",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT"
+}

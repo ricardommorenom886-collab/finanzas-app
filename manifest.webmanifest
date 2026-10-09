@@ -1,0 +1,21 @@
+{
+  "name": "FinanzasPro - Control Financiero",
+  "short_name": "FinanzasPro",
+  "description": "Control de finanzas personales, metas de ahorro, límites de gastos y balance mensual.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#059669",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"]
+}
